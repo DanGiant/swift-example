@@ -28,9 +28,9 @@ final class RoomContext: ObservableObject {
     // Used to show connection error dialog
     // private var didClose: Bool = false
     @Published var shouldShowDisconnectReason: Bool = false
-    public var latestError: LiveKitError?
+    var latestError: LiveKitError?
 
-    public let room = Room()
+    let room = Room()
 
     @Published var url: String = "" {
         didSet { store.value.url = url }
@@ -98,7 +98,7 @@ final class RoomContext: ObservableObject {
 
     var _connectTask: Task<Void, Error>?
 
-    public init(store: ValueStore<Preferences>) {
+    init(store: ValueStore<Preferences>) {
         self.store = store
         room.add(delegate: self)
 
@@ -142,11 +142,11 @@ final class RoomContext: ObservableObject {
             autoSubscribe: autoSubscribe
         )
 
-        var e2eeOptions: E2EEOptions? = nil
+        var encryptionOptions: EncryptionOptions? = nil
         if isE2eeEnabled {
             let keyProvider = BaseKeyProvider(isSharedKey: true)
             keyProvider.setKey(key: e2eeKey)
-            e2eeOptions = E2EEOptions(keyProvider: keyProvider)
+            encryptionOptions = EncryptionOptions(keyProvider: keyProvider)
         }
 
         let roomOptions = RoomOptions(
@@ -163,8 +163,7 @@ final class RoomContext: ObservableObject {
             ),
             adaptiveStream: true,
             dynacast: dynacast,
-            // isE2eeEnabled: isE2eeEnabled,
-            e2eeOptions: e2eeOptions,
+            encryptionOptions: encryptionOptions,
             reportRemoteTrackStatistics: true
         )
 
@@ -279,7 +278,7 @@ extension RoomContext: RoomDelegate {
         }
     }
 
-    nonisolated func room(_: Room, participant _: RemoteParticipant?, didReceiveData data: Data, forTopic _: String) {
+    nonisolated func room(_: Room, participant _: RemoteParticipant?, didReceiveData data: Data, forTopic _: String, encryptionType _: EncryptionType) {
         do {
             let roomMessage = try jsonDecoder.decode(ExampleRoomMessage.self, from: data)
             // Update UI from main queue
